@@ -1,0 +1,12 @@
+# YOLO Dataset Configuration File
+# Paths can be absolute or relative to the location specified in 'path'
+path: ../data
+train: images/train
+val: images/val
+test: images/val
+
+# Classes configuration
+names:
+  0: circle
+  1: rectangle
+  2: triangle
