@@ -91,10 +91,10 @@ def build_app():
     Construct the Gradio UI layout and event bindings.
     """
     available_weights = [
+        "runs/train/car_detector/weights/best.pt",
         "yolov8n.pt",
         "yolov8s.pt",
-        "yolov8m.pt",
-        "runs/train/custom_detector/weights/best.pt"
+        "yolov8m.pt"
     ]
 
     custom_theme = gr.themes.Soft(
@@ -117,7 +117,7 @@ def build_app():
 
                 model_selector = gr.Dropdown(
                     choices=available_weights,
-                    value="yolov8n.pt",
+                    value="runs/train/car_detector/weights/best.pt",
                     label="Model Weights",
                     info="Choose a pretrained YOLO checkpoint or custom trained best.pt"
                 )

@@ -66,6 +66,8 @@ def run_prediction(
     if isinstance(source, str) and source.isdigit():
         source = int(source)
 
+    project_path = str(Path(project).resolve())
+
     results = model.predict(
         source=source,
         conf=conf_thresh,
@@ -74,7 +76,7 @@ def run_prediction(
         device=chosen_device,
         save=save,
         show=show,
-        project=project,
+        project=project_path,
         name=name,
         verbose=True
     )
@@ -89,7 +91,7 @@ def run_prediction(
     print("\n" + "=" * 60)
     print(f"[SUMMARY] Total detected objects across batch: {total_detections}")
     if save:
-        output_dir = Path(project) / name
+        output_dir = Path(project_path) / name
         print(f"[OUTPUT] Saved annotated results to: {output_dir.resolve()}")
     print("=" * 60 + "\n")
 

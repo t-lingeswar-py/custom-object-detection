@@ -63,7 +63,13 @@ def validate_dataset(data_yaml_path):
     data = load_yaml_config(data_yaml_path)
     base_dir = Path(data_yaml_path).parent
 
-    dataset_root = base_dir / data.get("path", ".")
+    path_str = data.get("path", ".")
+    dataset_root = (base_dir / path_str).resolve()
+    if not dataset_root.exists():
+        dataset_root = (base_dir.parent / path_str).resolve()
+    if not dataset_root.exists():
+        dataset_root = Path(path_str).resolve()
+
     train_rel = data.get("train", "images/train")
     val_rel = data.get("val", "images/val")
 

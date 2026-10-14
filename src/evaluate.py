@@ -49,12 +49,13 @@ def evaluate_model(weights_path, data_yaml, img_size=640, batch_size=16, device=
     print("=" * 60 + "\n")
 
     model = YOLO(str(weights))
+    project_path = str(Path(project).resolve())
     metrics = model.val(
         data=str(data_path),
         imgsz=img_size,
         batch=batch_size,
         device=chosen_device,
-        project=project,
+        project=project_path,
         name=name,
         verbose=True
     )

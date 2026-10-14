@@ -1,6 +1,22 @@
-# Custom Object Detection Pipeline
+# Custom Car Object Detection Pipeline
 
-An end-to-end computer vision pipeline for custom object detection built on YOLOv8 and YOLO11. This project provides a complete workflow from synthetic/custom dataset generation and model training to evaluation, inference, ONNX export, and an interactive Gradio web application.
+An end-to-end computer vision pipeline for custom object detection built on YOLOv8 and YOLO11. This project provides a complete workflow from dataset ingestion and annotation conversion (CSV to YOLO format) to model training, evaluation, inference, ONNX export, and an interactive Gradio web application.
+
+---
+
+## Benchmark Results (Car Detection Model)
+
+Trained on 284 training images and validated on 71 images (117 car instances):
+
+| Metric | Score |
+|---|---|
+| Precision (Box) | 98.0% |
+| Recall (Box) | 99.1% |
+| mAP @ 0.50 | 99.3% |
+| mAP @ 0.50:0.95 | 65.8% |
+| Inference Latency | ~32 ms / frame (CPU) |
+
+Checkpoints are saved at `runs/train/car_detector/weights/best.pt`.
 
 ---
 
@@ -8,7 +24,7 @@ An end-to-end computer vision pipeline for custom object detection built on YOLO
 
 - **Multi-Architecture Support**: Native support for YOLOv8 and YOLO11 architectures (`n`, `s`, `m`, `l`, `x` variants).
 - **Automated Hardware Acceleration**: Automatically switches between CUDA GPU, Apple Silicon MPS, or multi-threaded CPU.
-- **Out-of-the-Box Dataset Generator**: Generates synthetic annotated samples with standardized YOLO bounding boxes (`class_id x_center y_center width height`) for immediate training and verification.
+- **Automated Dataset Converter**: Dedicated ingestion script converting CSV bounding box coordinates (`xmin`, `ymin`, `xmax`, `ymax`) to normalized YOLO format (`0 x_center y_center width height`).
 - **Production Export Pipeline**: One-command export to ONNX, TorchScript, OpenVINO, TFLite, and CoreML.
 - **Interactive Web Application**: Gradio-based interface for image and video inference, real-time threshold adjustments, and tabular detection coordinates.
 - **Modular Codebase**: Strict separation between configuration, data management, training, evaluation, inference, and UI.
@@ -25,8 +41,9 @@ custom-object-detection/
 |-- config/
 |   `-- data.yaml               # YOLO dataset configuration and class definitions
 |-- data/
+|   |-- ingest_car_dataset.py   # Dataset ingestion & CSV-to-YOLO converter
 |   |-- sample_dataset_generator.py # Synthetic dataset generator in YOLO format
-|   |-- images/                 # Image repository (train / val)
+|   |-- images/                 # Image repository (train / val / test)
 |   `-- labels/                 # Annotation text files (train / val)
 |-- src/
 |   |-- __init__.py
@@ -71,83 +88,43 @@ pip install -r requirements.txt
 
 ## Quickstart
 
-### Step 1: Generate Sample Dataset
-To start training immediately without downloading external datasets, generate synthetic training and validation images:
+### Step 1: Ingest and Convert Dataset
+To convert the car dataset from CSV bounding boxes to YOLO format and split into train/val sets:
 ```bash
-python data/sample_dataset_generator.py --train-count 60 --val-count 20 --img-size 416
+python data/ingest_car_dataset.py
 ```
-This generates labeled geometric shapes (circle, rectangle, triangle) in `data/images/` and `data/labels/`.
 
 ### Step 2: Train the Detector
-Train a lightweight YOLO model using the generated dataset:
+Train a lightweight YOLO model using the ingested dataset:
 ```bash
-python src/train.py --data config/data.yaml --model yolov8n.pt --epochs 10 --imgsz 416 --batch 8
+python src/train.py --data config/data.yaml --model yolov8n.pt --epochs 10 --imgsz 640 --batch 16 --name car_detector
 ```
-Artifacts and best weights are saved automatically to `runs/train/custom_detector/weights/best.pt`.
+Artifacts and best weights are saved automatically to `runs/train/car_detector/weights/best.pt`.
 
 ### Step 3: Evaluate Model Performance
 Validate trained checkpoints and calculate metrics:
 ```bash
-python src/evaluate.py --weights runs/train/custom_detector/weights/best.pt --data config/data.yaml --imgsz 416
+python src/evaluate.py --weights runs/train/car_detector/weights/best.pt --data config/data.yaml --imgsz 640
 ```
 
 ### Step 4: Run Inference
 Test your model on new images, directories, or a webcam feed:
 ```bash
-# On validation folder:
-python src/predict.py --weights runs/train/custom_detector/weights/best.pt --source data/images/val
+# On test images folder:
+python src/predict.py --weights runs/train/car_detector/weights/best.pt --source data/images/test --name test_cars
 
 # On single image:
-python src/predict.py --weights runs/train/custom_detector/weights/best.pt --source path/to/image.jpg
+python src/predict.py --weights runs/train/car_detector/weights/best.pt --source data/images/test/vid_5_26660.jpg
 
 # Live webcam (index 0):
-python src/predict.py --weights runs/train/custom_detector/weights/best.pt --source 0
+python src/predict.py --weights runs/train/car_detector/weights/best.pt --source 0
 ```
 
 ### Step 5: Export Model to ONNX
 Export trained weights for deployment on mobile, edge devices, or cloud runtimes:
 ```bash
-python src/export.py --weights runs/train/custom_detector/weights/best.pt --format onnx --imgsz 416
+python src/export.py --weights runs/train/car_detector/weights/best.pt --format onnx --imgsz 640
 ```
-
----
-
-## Using Custom Datasets
-
-To train on your own real-world images (e.g., from Roboflow, CVAT, or LabelImg):
-
-1. Organize your files in the YOLO layout:
-   ```text
-   data/
-   |-- images/
-   |   |-- train/  (jpg/png files)
-   |   `-- val/    (jpg/png files)
-   `-- labels/
-       |-- train/  (txt files with matching filenames)
-       `-- val/    (txt files with matching filenames)
-   ```
-
-2. Each label `.txt` file must contain one row per object:
-   ```text
-   <class_id> <x_center> <y_center> <width> <height>
-   ```
-   Values must be normalized between `0.0` and `1.0`.
-
-3. Update `config/data.yaml` with your class names:
-   ```yaml
-   path: ../data
-   train: images/train
-   val: images/val
-   names:
-     0: helmet
-     1: vest
-     2: boots
-   ```
-
-4. Launch training:
-   ```bash
-   python src/train.py --data config/data.yaml --epochs 50 --imgsz 640 --batch 16
-   ```
 
 ---
 

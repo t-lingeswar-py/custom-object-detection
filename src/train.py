@@ -74,6 +74,8 @@ def train_model(
     # Load model
     model = YOLO(model_name)
 
+    project_path = str(Path(project).resolve())
+
     # Launch training
     results = model.train(
         data=str(data_path),
@@ -81,7 +83,7 @@ def train_model(
         batch=batch_size,
         imgsz=img_size,
         device=chosen_device,
-        project=project,
+        project=project_path,
         name=experiment_name,
         patience=patience,
         pretrained=pretrained,
@@ -89,7 +91,7 @@ def train_model(
         verbose=True
     )
 
-    best_weights = Path(project) / experiment_name / "weights" / "best.pt"
+    best_weights = Path(project_path) / experiment_name / "weights" / "best.pt"
     print("\n" + "=" * 60)
     print("[SUCCESS] Training completed successfully!")
     if best_weights.exists():

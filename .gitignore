@@ -45,6 +45,7 @@ runs/
 *.torchscript
 *.tflite
 *.engine
+*.cache
 data/images/*.cache
 data/labels/*.cache
 
